@@ -48,13 +48,13 @@
 
     <div class="category">Commodities (원자재)</div><hr class="hr-short">
     <div class="item-row"><span class="label">GOLD<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
-    <div class="item-row"><span class="label">SILVER<span class="unit-text">(은)</span></span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
-    <div class="item-row"><span class="label">PLATINUM<span class="unit-text">(백금)</span></span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
+    <div class="item-row"><span class="label">SILVER<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
+    <div class="item-row"><span class="label">PLATINUM<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
 
     <div class="category">Crypto (가상자산)</div><hr class="hr-short">
-    <div class="item-row"><span class="label">BTC<span class="unit-text">(비트코인)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
-    <div class="item-row"><span class="label">ETH<span class="unit-text">(이더리움)</span></span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
-    <div class="item-row"><span class="label">XRP<span class="unit-text">(리플)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
+    <div class="item-row"><span class="label">BTC<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
+    <div class="item-row"><span class="label">ETH<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
+    <div class="item-row"><span class="label">XRP<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
     <div class="item-row"><span class="label">VIX 지수<span class="unit-text">(공포지수)</span></span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
@@ -153,7 +153,6 @@
 
             await Promise.all([...yahooPromises, ...fxPromises]);
 
-            // 금리차 계산 및 등락 표시
             const spread = globalRates["10Y"] - globalRates["2Y"];
             const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
             const spreadEl = document.getElementById("SPREAD");
@@ -161,7 +160,6 @@
             formatChange(spread, prevSpread, "SPREAD");
             if (spread < 0) spreadEl.className = "value status-danger";
 
-            // 고정 지표
             document.getElementById("BUFFETT").innerText = "190.5%";
             document.getElementById("BUFFETT").className = "value status-warning";
             document.getElementById("SHILLER").innerText = "35.2";
