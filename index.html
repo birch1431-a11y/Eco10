@@ -24,7 +24,7 @@
 </head>
 <body>
 
-    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.7</div>
+    <div class="header" onclick="resetKey()">🔄 ECON DASHBOARD V5.8</div>
 
     <div class="category">외환 (Forex)</div><hr class="hr-short">
     <div class="item-row"><span class="label">달러지수</span><div class="val-container"><span class="value" id="DXY">--</span><div class="change" id="DXY-c">--</div></div></div>
@@ -93,7 +93,7 @@
             const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
             const changeEl = document.getElementById(id + "-c");
             if(changeEl) {
-                changeEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})} (${percent}%)</span>`;
+                changeEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${percent}%)</span>`;
             }
             return percent;
         }
@@ -112,25 +112,30 @@
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
 
                     if (el) {
-                        if (id.includes("US") && !id.includes("MCAP")) el.innerText = price.toFixed(3) + "%";
-                        else if (price > 100) el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
-                        else el.innerText = price.toFixed(2);
+                        // 자릿수 설정: NASDAQ(^IXIC), DOW(^DJI)는 소수점 둘째 자리
+                        if (ticker === "^IXIC" || ticker === "^DJI") {
+                            el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        } 
+                        else if (id.includes("US") && !id.includes("MCAP")) {
+                            el.innerText = price.toFixed(3) + "%";
+                        }
+                        else if (price > 100) {
+                            el.innerText = price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                        }
+                        else {
+                            el.innerText = price.toFixed(2);
+                        }
                         formatChange(price, prev, id);
                     }
 
-                    // [수정된 핵심 로직] VTI(시가총액 대변) 데이터가 들어올 때
                     if (ticker === "VTI") {
-                        const ratio = price / prev; // 가격 변화 비율 (예: 1.01)
-                        const curMcap = BASE_US_MCAP * ratio; // 실시간 시총 계산
-                        
+                        const ratio = price / prev;
+                        const curMcap = BASE_US_MCAP * ratio;
                         const mcapEl = document.getElementById("US_MCAP");
                         if (mcapEl) {
                             mcapEl.innerText = curMcap.toFixed(2);
                             formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
                         }
-
-                        // 버핏 지수 계산: (실시간 시총 / 고정 GDP) * 100
-                        // 분자인 curMcap이 ratio에 따라 커지면 무조건 상승합니다.
                         const liveBuffett = (curMcap / BASE_US_GDP * 100).toFixed(1);
                         const bEl = document.getElementById("BUFFETT");
                         if (bEl) {
@@ -183,7 +188,13 @@
                     if (d.close) {
                         const cur = parseFloat(d.close);
                         const pre = parseFloat(d.previous_close);
-                        document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2});
+                        
+                        // 원/달러, 원/유로, 원/위안 소수점 둘째 자리 적용
+                        if (s === "USD/KRW" || s === "EUR/KRW" || s === "CNY/KRW") {
+                            document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        } else {
+                            document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2});
+                        }
                         formatChange(cur, pre, s);
                     }
                 } catch(e) { document.getElementById(s).innerText = "N/A"; }
