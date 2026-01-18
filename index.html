@@ -7,18 +7,24 @@
    <style>
     body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
     .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #00ff88; cursor: pointer; padding: 10px; border: 1px solid #333; border-radius: 8px; }
+    
+    /* [분류] 외환, 지수 등 - 가장 밝은 흰색 유지 */
     .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
     .hr-short { border: 0; border-top: 2px solid #00ff88; width: 30px; margin: 5px 0 10px 0; }
+    
     .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
     
-    /* 1. 항목 이름을 회색(#bbb)에서 흰색(#ffffff)으로 수정 */
-    .label { font-size: 0.95rem; color: #ffffff; font-weight: 500; } 
+    /* [하부항목] 원/달러, 다우존스 등 - 흰색보다 약간 흐린 회색으로 수정 */
+    .label { font-size: 0.95rem; color: #bbbbbb; font-weight: 400; } 
     
-    /* 2. 단위 ( ) 글자 크기를 키우고 더 선명하게 수정 */
-    .unit-text { font-size: 0.85rem; color: #aaaaaa; margin-left: 4px; } 
+    /* [단위] ( ) - 항목 이름보다 한 단계 더 흐리게 하여 숫자 보조 */
+    .unit-text { font-size: 0.85rem; color: #888888; margin-left: 4px; } 
     
     .val-container { text-align: right; }
+    
+    /* [숫자값] 데이터 결과 - 선명한 흰색으로 강조 */
     .value { font-size: 1rem; font-weight: 600; font-family: 'Roboto Mono', monospace; color: #ffffff; display: block; }
+    
     .change { font-size: 0.75rem; font-weight: 400; margin-top: 2px; }
     .up { color: #ff4444; }
     .down { color: #4488ff; }
