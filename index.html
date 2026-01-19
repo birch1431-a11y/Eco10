@@ -6,8 +6,26 @@
    <title>🔄 글로벌 경제 상황판</title>
    <style>
     body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
-    .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #00ff88; cursor: pointer; padding: 10px; border: 1px solid #333; border-radius: 8px; }
-    
+.header { 
+    text-align: center; 
+    font-size: 1.1rem; 
+    font-weight: bold; 
+    margin-bottom: 25px; 
+    color: #c5a059; /* 기품 있는 골드색으로 변경 */
+    cursor: pointer; 
+    padding: 10px; 
+    border: 1px solid #444; /* 테두리도 약간 밝게 조절 */
+    border-radius: 8px; 
+}
+
+.hr-short { 
+    border: 0; 
+    border-top: 2px solid #c5a059; /* 제목과 색상 통일 */
+    width: 30px; 
+    margin: 5px 0 10px 0; 
+}
+
+       
     /* [분류] 외환, 지수 등 - 가장 밝은 흰색 유지 */
     .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
     .hr-short { border: 0; border-top: 2px solid #00ff88; width: 30px; margin: 5px 0 10px 0; }
@@ -76,7 +94,7 @@
     <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
 
   <div class="footer-copy">
-    2026 Developed by <span style="color: #888; font-weight: 500; font-size: 0.9rem;">S.K. Chun</span>
+    2026 Developed by <span style="color: #777; font-weight: 500; font-size: 0.9rem;">S.K. Chun</span>
 </div>
 
     <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 로딩 중...</div>
