@@ -24,6 +24,7 @@
         .status-warning { color: #ffbb33 !important; }
         .status-safe { color: #00ff88 !important; }
         .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
+        .highlight-val { color: #c5a059 !important; }
     </style>
 </head>
 <body>
@@ -44,6 +45,9 @@
     <div class="item-row"><span class="label">DOW</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
     <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
+    
+    <div class="item-row" style="background-color: rgba(197, 160, 89, 0.05);"><span class="label">달러환산 KOSPI (KOSPI/환율)</span><div class="val-container"><span class="value highlight-val" id="KOSPI_USD">--</span><div class="change" id="KOSPI_USD-c">계산중...</div></div></div>
+    
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
     <div class="category">미국 국채 금리</div><hr class="hr-short">
@@ -75,9 +79,11 @@
 
     <script>
         const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
-
         const BASE_US_MCAP = 55.2; 
         const BASE_KR_MCAP = 2450; 
+
+        let liveKospi = { cur: null, prev: null };
+        let liveUsdKrw = { cur: null, prev: null };
 
         function getCurrentGDP() {
             const today = new Date();
@@ -127,6 +133,15 @@
             return percent;
         }
 
+        function calculateKospiUsd() {
+            if (liveKospi.cur && liveUsdKrw.cur) {
+                const curKospiUsd = liveKospi.cur / liveUsdKrw.cur;
+                const prevKospiUsd = liveKospi.prev / liveUsdKrw.prev;
+                document.getElementById("KOSPI_USD").innerText = curKospiUsd.toFixed(2);
+                formatChange(curKospiUsd, prevKospiUsd, "KOSPI_USD");
+            }
+        }
+
         async function getYahoo(ticker, id) {
             const el = document.getElementById(id);
             const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`;
@@ -139,6 +154,12 @@
 
                     if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
+
+                    if (id === "KOSPI") {
+                        liveKospi.cur = price;
+                        liveKospi.prev = prev;
+                        calculateKospiUsd();
+                    }
 
                     if (el) {
                         if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -207,6 +228,12 @@
                         const pre = parseFloat(d.previous_close);
                         document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         formatChange(cur, pre, s);
+
+                        if (s === "USD/KRW") {
+                            liveUsdKrw.cur = cur;
+                            liveUsdKrw.prev = pre;
+                            calculateKospiUsd();
+                        }
                     }
                     await new Promise(res => setTimeout(res, 500));
                 } catch(e) { 
