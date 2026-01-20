@@ -24,7 +24,6 @@
         .status-warning { color: #ffbb33 !important; }
         .status-safe { color: #00ff88 !important; }
         .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
-        .highlight-val { color: #c5a059 !important; }
     </style>
 </head>
 <body>
@@ -46,13 +45,13 @@
     <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
     
-<div class="item-row">
-    <span class="label">달러환산 KOSPI (KOSPI/환율)</span>
-    <div class="val-container">
-        <span class="value" id="KOSPI_USD">--</span>
-        <div class="change" id="KOSPI_USD-c">--</div>
+    <div class="item-row">
+        <span class="label">달러환산 KOSPI (KOSPI/환율)</span>
+        <div class="val-container">
+            <span class="value" id="KOSPI_USD">--</span>
+            <div class="change" id="KOSPI_USD-c">--</div>
+        </div>
     </div>
-</div>
     
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
@@ -91,24 +90,43 @@
         let liveKospi = { cur: null, prev: null };
         let liveUsdKrw = { cur: null, prev: null };
 
-        function getCurrentGDP() {
+        // [최적화 로직] 특정 날짜가 되면 검색하고, 아니면 저장된 값 사용
+        async function getSmartData(type) {
             const today = new Date();
-            const yyyymmdd = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-            if (yyyymmdd >= 20261031) return 29.42;
-            if (yyyymmdd >= 20260731) return 28.91;
-            if (yyyymmdd >= 20260430) return 28.45;
-            return 27.94;
-        }
+            const month = today.getMonth() + 1;
+            const date = today.getDate();
+            const yearMonth = today.getFullYear() + "-" + month;
 
-        function getScheduledShiller() {
-            const today = new Date();
-            const yyyymm = today.getFullYear() * 100 + (today.getMonth() + 1);
-            const data = {
-                202601: 38.1, 202602: 38.3, 202603: 38.5, 202604: 38.8,
-                202605: 39.0, 202606: 39.2, 202607: 39.5, 202608: 39.7,
-                202609: 39.9, 202610: 40.1, 202611: 40.3, 202612: 40.5
-            };
-            return data[yyyymm] || 38.1;
+            // 로컬 저장소에서 데이터 불러오기
+            let saved = JSON.parse(localStorage.getItem('smart_' + type)) || { val: (type === 'GDP' ? 27.94 : 38.1), lastChecked: "" };
+
+            let needCheck = false;
+            if (type === 'GDP') {
+                // GDP: 1, 4, 7, 10월 30일 이후에만 체크
+                if ([1, 4, 7, 10].includes(month) && date >= 30 && saved.lastChecked !== yearMonth) needCheck = true;
+            } else {
+                // Shiller: 매달 7일 이후에만 체크
+                if (date >= 7 && saved.lastChecked !== yearMonth) needCheck = true;
+            }
+
+            if (needCheck) {
+                const url = type === 'GDP' ? "https://query1.finance.yahoo.com/v8/finance/chart/GDP?interval=1d&range=5y" : "https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d";
+                try {
+                    const data = await fetchData(url);
+                    if (data && data.chart.result) {
+                        const newVal = data.chart.result[0].meta.regularMarketPrice;
+                        const finalVal = type === 'GDP' ? newVal / 1000 : newVal;
+                        
+                        // 데이터가 전과 동일하면 날짜만 갱신(다음날 또 검색 안 함), 다르면 값과 날짜 모두 저장
+                        if (finalVal > 0) {
+                            saved.val = finalVal;
+                            saved.lastChecked = yearMonth; // 이번 달 체크 완료
+                            localStorage.setItem('smart_' + type, JSON.stringify(saved));
+                        }
+                    }
+                } catch (e) { console.log(type + " 로드 실패, 기존값 유지"); }
+            }
+            return saved.val;
         }
 
         async function fetchData(url) {
@@ -160,12 +178,7 @@
 
                     if (id === "US10Y") { globalRates["10Y"] = price; globalRates["10Y_prev"] = prev; }
                     if (id === "US2Y") { globalRates["2Y"] = price; globalRates["2Y_prev"] = prev; }
-
-                    if (id === "KOSPI") {
-                        liveKospi.cur = price;
-                        liveKospi.prev = prev;
-                        calculateKospiUsd();
-                    }
+                    if (id === "KOSPI") { liveKospi.cur = price; liveKospi.prev = prev; calculateKospiUsd(); }
 
                     if (el) {
                         if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -179,28 +192,24 @@
                         const ratio = price / prev;
                         const curMcap = BASE_US_MCAP * ratio;
                         const mcapEl = document.getElementById("US_MCAP");
-                        if (mcapEl) {
-                            mcapEl.innerText = curMcap.toFixed(2);
-                            formatChange(curMcap, BASE_US_MCAP, "US_MCAP");
-                        }
-                        const activeGDP = getCurrentGDP();
-                        const liveBuffett = parseFloat((curMcap / activeGDP * 100).toFixed(1));
-                        const bEl = document.getElementById("BUFFETT");
-                        if (bEl) {
-                            bEl.innerText = liveBuffett + "%";
-                            if (liveBuffett >= 150) bEl.className = "value status-danger";
-                            else if (liveBuffett >= 120) bEl.className = "value status-warning";
-                            else bEl.className = "value status-safe";
-                        }
+                        if (mcapEl) { mcapEl.innerText = curMcap.toFixed(2); formatChange(curMcap, BASE_US_MCAP, "US_MCAP"); }
+                        
+                        getSmartData('GDP').then(activeGDP => {
+                            const liveBuffett = parseFloat((curMcap / activeGDP * 100).toFixed(1));
+                            const bEl = document.getElementById("BUFFETT");
+                            if (bEl) {
+                                bEl.innerText = liveBuffett + "%";
+                                if (liveBuffett >= 150) bEl.className = "value status-danger";
+                                else if (liveBuffett >= 120) bEl.className = "value status-warning";
+                                else bEl.className = "value status-safe";
+                            }
+                        });
                     }
 
                     if (id === "KOSPI") {
                         const curKrMcap = (BASE_KR_MCAP * (price / prev));
                         const krMcapEl = document.getElementById("KR_MCAP");
-                        if (krMcapEl) {
-                            krMcapEl.innerText = Math.floor(curKrMcap).toLocaleString();
-                            formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP");
-                        }
+                        if (krMcapEl) { krMcapEl.innerText = Math.floor(curKrMcap).toLocaleString(); formatChange(curKrMcap, BASE_KR_MCAP, "KR_MCAP"); }
                     }
 
                     if (id === "VIX" && el) {
@@ -221,8 +230,7 @@
                 ["BTC-USD", "BTC"], ["ETH-USD", "ETH"], ["XRP-USD", "XRP"], ["^VIX", "VIX"]
             ];
             
-            const yahooPromises = yahooItems.map(item => getYahoo(item[0], item[1]));
-            await Promise.all(yahooPromises);
+            await Promise.all(yahooItems.map(item => getYahoo(item[0], item[1])));
 
             const fx = ["USD/KRW", "JPY/KRW", "EUR/KRW", "CNY/KRW"];
             for (const s of fx) {
@@ -230,37 +238,28 @@
                     const r = await fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`);
                     const d = await r.json();
                     if (d.close) {
-                        const cur = parseFloat(d.close);
-                        const pre = parseFloat(d.previous_close);
+                        const cur = parseFloat(d.close), pre = parseFloat(d.previous_close);
                         document.getElementById(s).innerText = cur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         formatChange(cur, pre, s);
-
-                        if (s === "USD/KRW") {
-                            liveUsdKrw.cur = cur;
-                            liveUsdKrw.prev = pre;
-                            calculateKospiUsd();
-                        }
+                        if (s === "USD/KRW") { liveUsdKrw.cur = cur; liveUsdKrw.prev = pre; calculateKospiUsd(); }
                     }
                     await new Promise(res => setTimeout(res, 500));
-                } catch(e) { 
-                    document.getElementById(s).innerText = "N/A"; 
-                }
+                } catch(e) { document.getElementById(s).innerText = "N/A"; }
             }
 
             if (globalRates["10Y"] && globalRates["2Y"]) {
                 const spread = globalRates["10Y"] - globalRates["2Y"];
-                const prevSpread = globalRates["10Y_prev"] - globalRates["2Y_prev"];
                 const spreadEl = document.getElementById("SPREAD");
                 if (spreadEl) {
                     spreadEl.innerText = spread.toFixed(3) + "%p";
-                    formatChange(spread, prevSpread, "SPREAD");
+                    formatChange(spread, (globalRates["10Y_prev"] - globalRates["2Y_prev"]), "SPREAD");
                     spreadEl.className = spread < 0 ? "value status-danger" : "value status-safe";
                 }
             }
 
+            const shillerVal = await getSmartData('SHILLER');
             const sEl = document.getElementById("SHILLER");
             if (sEl) {
-                const shillerVal = getScheduledShiller();
                 sEl.innerText = shillerVal.toFixed(1);
                 if (shillerVal >= 30) sEl.className = "value status-danger";
                 else if (shillerVal >= 20) sEl.className = "value status-warning";
