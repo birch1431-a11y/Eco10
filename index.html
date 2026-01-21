@@ -101,11 +101,6 @@
                     else if (cur > 100) el.innerText = cur.toLocaleString(undefined, {maximumFractionDigits:2});
                     else el.innerText = cur.toFixed(2);
                     formatChange(cur, prev, id);
-                    
-                    if (id === "VIX") {
-                        if (cur >= 30) el.className = "value status-danger";
-                        else if (cur >= 20) el.className = "value status-warning";
-                        else el.className = "value status-safe";
                 }
 
                 if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
