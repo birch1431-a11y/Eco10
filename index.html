@@ -6,28 +6,20 @@
     <title>🔄 글로벌 경제 상황판</title>
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 15px; margin: 0; }
-        .header { 
-            text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; 
-            color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; 
-        }
+        .header { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; color: #c5a059; cursor: pointer; padding: 10px; border: 1px solid #444; border-radius: 8px; }
         .hr-short { border: 0; border-top: 2px solid #c5a059; width: 30px; margin: 5px 0 10px 0; }
         .category { margin-top: 25px; font-size: 0.95rem; color: #ffffff; font-weight: bold; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
         .label { font-size: 0.95rem; color: #bbbbbb; font-weight: 400; } 
-        .unit-text { font-size: 0.85rem; color: #888888; margin-left: 4px; } 
         .val-container { text-align: right; }
         .value { font-size: 1rem; font-weight: 600; font-family: 'Roboto Mono', monospace; color: #ffffff; display: block; }
         .change { font-size: 0.75rem; font-weight: 400; margin-top: 2px; }
-        .up { color: #ff4444; }
-        .down { color: #4488ff; }
-        .status-danger { color: #ff4444 !important; }
-        .status-warning { color: #ffbb33 !important; }
-        .status-safe { color: #00ff88 !important; }
+        .up { color: #ff4444; } .down { color: #4488ff; }
+        .status-danger { color: #ff4444 !important; } .status-warning { color: #ffbb33 !important; } .status-safe { color: #00ff88 !important; }
         .footer-copy { text-align: center; font-size: 0.7rem; color: #555; margin: 40px 0 10px 0; border-top: 1px solid #222; padding-top: 20px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
-
     <div class="header" onclick="location.reload()">🔄 글로벌 경제 상황판</div>
 
     <div class="category">외환</div><hr class="hr-short">
@@ -38,21 +30,13 @@
     <div class="item-row"><span class="label">원/위안</span><div class="val-container"><span class="value" id="CNY/KRW">--</span><div class="change" id="CNY/KRW-c">--</div></div></div>
 
     <div class="category">주요 증시지표</div><hr class="hr-short">
-    <div class="item-row"><span class="label">미 증시 시총<span class="unit-text">($T)</span></span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
+    <div class="item-row"><span class="label">미 증시 시총($T)</span><div class="val-container"><span class="value" id="US_MCAP">--</span><div class="change" id="US_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">S&P 500</span><div class="val-container"><span class="value" id="SP500">--</span><div class="change" id="SP500-c">--</div></div></div>
     <div class="item-row"><span class="label">NASDAQ</span><div class="val-container"><span class="value" id="NASDAQ">--</span><div class="change" id="NASDAQ-c">--</div></div></div>
     <div class="item-row"><span class="label">DOW</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
-    <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
+    <div class="item-row"><span class="label">한 증시 시총(조₩)</span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
-    
-    <div class="item-row">
-        <span class="label">달러환산 KOSPI</span>
-        <div class="val-container">
-            <span class="value" id="KOSPI_USD">--</span>
-            <div class="change" id="KOSPI_USD-c">--</div>
-        </div>
-    </div>
-    
+    <div class="item-row"><span class="label">달러환산 KOSPI</span><div class="val-container"><span class="value" id="KOSPI_USD">--</span><div class="change" id="KOSPI_USD-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
     <div class="category">미국 국채 금리</div><hr class="hr-short">
@@ -61,16 +45,16 @@
     <div class="item-row"><span class="label">2Y Yield</span><div class="val-container"><span class="value" id="US2Y">--</span><div class="change" id="US2Y-c">--</div></div></div>
 
     <div class="category">원자재</div><hr class="hr-short">
-    <div class="item-row"><span class="label">GOLD<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
-    <div class="item-row"><span class="label">SILVER<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
-    <div class="item-row"><span class="label">구리<span class="unit-text">($/lb)</span></span><div class="val-container"><span class="value" id="COPPER">--</span><div class="change" id="COPPER-c">--</div></div></div>
-    <div class="item-row"><span class="label">PLATINUM<span class="unit-text">($/oz)</span></span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
-    <div class="item-row"><span class="label">WTI유<span class="unit-text">($/bbl)</span></span><div class="val-container"><span class="value" id="WTI">--</span><div class="change" id="WTI-c">--</div></div></div>
+    <div class="item-row"><span class="label">GOLD($/oz)</span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
+    <div class="item-row"><span class="label">SILVER($/oz)</span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
+    <div class="item-row"><span class="label">구리($/lb)</span><div class="val-container"><span class="value" id="COPPER">--</span><div class="change" id="COPPER-c">--</div></div></div>
+    <div class="item-row"><span class="label">PLATINUM($/oz)</span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
+    <div class="item-row"><span class="label">WTI유($/bbl)</span><div class="val-container"><span class="value" id="WTI">--</span><div class="change" id="WTI-c">--</div></div></div>
 
     <div class="category">가상자산</div><hr class="hr-short">
-    <div class="item-row"><span class="label">BTC<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
-    <div class="item-row"><span class="label">ETH<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
-    <div class="item-row"><span class="label">XRP<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
+    <div class="item-row"><span class="label">BTC($)</span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
+    <div class="item-row"><span class="label">ETH($)</span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
+    <div class="item-row"><span class="label">XRP($)</span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
     <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
@@ -78,8 +62,133 @@
     <div class="item-row"><span class="label">버핏 지수</span><span class="value" id="BUFFETT">--</span></div>
     <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
 
-    <div class="footer-copy">
-        2026 Developed by <span style="color: #777; font-weight: 500; font-size: 0.9rem;">S.K. Chun</span>
-    </div>
+    <div class="footer-copy">2026 Developed by <span style="color: #777; font-weight: 500;">S.K. Chun</span></div>
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">연결 시도 중...</div>
 
-    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom
+    <script>
+        const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
+        const BASE_US_MCAP = 55.2; 
+        const BASE_KR_MCAP = 2450; 
+        let live = { k:0, kp:0, u:0, up:0, y10:0, y10p:0, y2:0, y2p:0 };
+
+        async function fetchData(url) {
+            // 다중 프록시 시도로 데이터 수신율 극대화
+            const proxyUrls = [
+                `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+            ];
+            for (let p of proxyUrls) {
+                try {
+                    const res = await fetch(p);
+                    const json = await res.json();
+                    const data = json.contents ? JSON.parse(json.contents) : json;
+                    if (data) return data;
+                } catch (e) { continue; }
+            }
+            return null;
+        }
+
+        function formatChange(c, p, id) {
+            const diff = c - p, pct = (diff/p*100).toFixed(2);
+            const sign = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
+            const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
+            const cEl = document.getElementById(id + "-c");
+            if(cEl) cEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits:2})} (${pct}%)</span>`;
+        }
+
+        async function getYahoo(ticker, id) {
+            const data = await fetchData(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`);
+            if (data && data.chart.result) {
+                const meta = data.chart.result[0].meta;
+                const cur = meta.regularMarketPrice;
+                const prev = meta.previousClose;
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits:2});
+                else if (id.includes("US") && !id.includes("MCAP")) el.innerText = cur.toFixed(3) + "%";
+                else if (cur > 100) el.innerText = cur.toLocaleString(undefined, {maximumFractionDigits:2});
+                else el.innerText = cur.toFixed(2);
+                
+                formatChange(cur, prev, id);
+
+                if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
+                if(id === "US10Y") { live.y10=cur; live.y10p=prev; updateSpread(); }
+                if(id === "US2Y") { live.y2=cur; live.y2p=prev; updateSpread(); }
+                if(id === "VIX") el.className = "value " + (cur>=30?"status-danger":cur>=20?"status-warning":"status-safe");
+                if(ticker === "VTI") updateUsMcap(cur, prev);
+                updateKospiUsd();
+            }
+        }
+
+        function updateUsMcap(c, p) {
+            const m = BASE_US_MCAP * (c/p);
+            document.getElementById("US_MCAP").innerText = m.toFixed(2);
+            formatChange(m, BASE_US_MCAP, "US_MCAP");
+            const bft = (m/27.94*100).toFixed(1);
+            const bEl = document.getElementById("BUFFETT");
+            if(bEl) { bEl.innerText = bft + "%"; bEl.className = "value " + (bft>=150?"status-danger":bft>=120?"status-warning":"status-safe"); }
+        }
+
+        function updateKrMcap(c, p) {
+            const m = BASE_KR_MCAP * (c/p);
+            document.getElementById("KR_MCAP").innerText = Math.floor(m).toLocaleString();
+            formatChange(m, BASE_KR_MCAP, "KR_MCAP");
+        }
+
+        function updateKospiUsd() {
+            if(live.k && live.u) {
+                const c = live.k/live.u, p = live.kp/live.up;
+                document.getElementById("KOSPI_USD").innerText = c.toFixed(2);
+                formatChange(c, p, "KOSPI_USD");
+            }
+        }
+
+        function updateSpread() {
+            if(live.y10 && live.y2) {
+                const s = live.y10-live.y2, sp = live.y10p-live.y2p;
+                const el = document.getElementById("SPREAD");
+                el.innerText = s.toFixed(3) + "%p";
+                formatChange(s, sp, "SPREAD");
+                el.className = "value " + (s<0?"status-danger":"status-safe");
+            }
+        }
+
+        async function init() {
+            const jobs = [
+                ["VTI","VTI"],["DX-Y.NYB","DXY"],["^GSPC","SP500"],["^IXIC","NASDAQ"],["^DJI","DOW"],
+                ["^KS11","KOSPI"],["^KQ11","KOSDAQ"],["^TYX","US30Y"],["^TNX","US10Y"],["^IRX","US2Y"],
+                ["GC=F","GOLD"],["SI=F","SILVER"],["HG=F","COPPER"],["PL=F","PLATINUM"],["CL=F","WTI"],
+                ["BTC-USD","BTC"],["ETH-USD","ETH"],["XRP-USD","XRP"],["^VIX","VIX"]
+            ];
+            // 병렬 실행으로 속도 향상
+            jobs.forEach(j => getYahoo(j[0], j[1]));
+
+            const fx = ["USD/KRW","JPY/KRW","EUR/KRW","CNY/KRW"];
+            for (const s of fx) {
+                fetch(`https://api.twelvedata.com/quote?symbol=${s}&apikey=${MY_API_KEY}`)
+                .then(r=>r.json()).then(d=>{
+                    if(d.close){
+                        const c=parseFloat(d.close), p=parseFloat(d.previous_close);
+                        document.getElementById(s).innerText = c.toLocaleString(undefined,{minimumFractionDigits:2});
+                        formatChange(c, p, s);
+                        if(s==="USD/KRW"){ live.u=c; live.up=p; updateKospiUsd(); }
+                    }
+                }).catch(e=>console.log(s+" 로드실패"));
+                await new Promise(r => setTimeout(r, 300)); // API 과부하 방지
+            }
+
+            fetchData("https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d").then(d=>{
+                if(d && d.chart.result) {
+                    const v = d.chart.result[0].meta.regularMarketPrice;
+                    const el = document.getElementById("SHILLER");
+                    el.innerText = v.toFixed(1);
+                    el.className = "value " + (v>=30?"status-danger":v>=20?"status-warning":"status-safe");
+                }
+            });
+            setTimeout(()=>{document.getElementById('status-msg').innerText = "최종 업데이트: " + new Date().toLocaleTimeString();}, 3000);
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>
