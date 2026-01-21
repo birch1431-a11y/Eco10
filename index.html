@@ -63,7 +63,7 @@
     <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
 
     <div class="footer-copy">2026 Developed by <span style="color: #777; font-weight: 500;">S.K. Chun</span></div>
-    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">연결 시도 중...</div>
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">데이터 연결 중...</div>
 
     <script>
         const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
@@ -72,20 +72,11 @@
         let live = { k:0, kp:0, u:0, up:0, y10:0, y10p:0, y2:0, y2p:0 };
 
         async function fetchData(url) {
-            // 다중 프록시 시도로 데이터 수신율 극대화
-            const proxyUrls = [
-                `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
-            ];
-            for (let p of proxyUrls) {
-                try {
-                    const res = await fetch(p);
-                    const json = await res.json();
-                    const data = json.contents ? JSON.parse(json.contents) : json;
-                    if (data) return data;
-                } catch (e) { continue; }
-            }
-            return null;
+            const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            try {
+                const res = await fetch(proxy);
+                return await res.json();
+            } catch (e) { return null; }
         }
 
         function formatChange(c, p, id) {
@@ -103,19 +94,18 @@
                 const cur = meta.regularMarketPrice;
                 const prev = meta.previousClose;
                 const el = document.getElementById(id);
-                if (!el) return;
 
-                if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits:2});
-                else if (id.includes("US") && !id.includes("MCAP")) el.innerText = cur.toFixed(3) + "%";
-                else if (cur > 100) el.innerText = cur.toLocaleString(undefined, {maximumFractionDigits:2});
-                else el.innerText = cur.toFixed(2);
-                
-                formatChange(cur, prev, id);
+                if (el) {
+                    if (ticker === "^IXIC" || ticker === "^DJI") el.innerText = cur.toLocaleString(undefined, {minimumFractionDigits:2});
+                    else if (id.includes("US") && !id.includes("MCAP")) el.innerText = cur.toFixed(3) + "%";
+                    else if (cur > 100) el.innerText = cur.toLocaleString(undefined, {maximumFractionDigits:2});
+                    else el.innerText = cur.toFixed(2);
+                    formatChange(cur, prev, id);
+                }
 
                 if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
                 if(id === "US10Y") { live.y10=cur; live.y10p=prev; updateSpread(); }
                 if(id === "US2Y") { live.y2=cur; live.y2p=prev; updateSpread(); }
-                if(id === "VIX") el.className = "value " + (cur>=30?"status-danger":cur>=20?"status-warning":"status-safe");
                 if(ticker === "VTI") updateUsMcap(cur, prev);
                 updateKospiUsd();
             }
@@ -123,17 +113,20 @@
 
         function updateUsMcap(c, p) {
             const m = BASE_US_MCAP * (c/p);
-            document.getElementById("US_MCAP").innerText = m.toFixed(2);
-            formatChange(m, BASE_US_MCAP, "US_MCAP");
-            const bft = (m/27.94*100).toFixed(1);
-            const bEl = document.getElementById("BUFFETT");
-            if(bEl) { bEl.innerText = bft + "%"; bEl.className = "value " + (bft>=150?"status-danger":bft>=120?"status-warning":"status-safe"); }
+            const el = document.getElementById("US_MCAP");
+            if(el) {
+                el.innerText = m.toFixed(2);
+                formatChange(m, BASE_US_MCAP, "US_MCAP");
+                const bft = (m/27.94*100).toFixed(1);
+                const bEl = document.getElementById("BUFFETT");
+                if(bEl) { bEl.innerText = bft + "%"; bEl.className = "value " + (bft>=150?"status-danger":bft>=120?"status-warning":"status-safe"); }
+            }
         }
 
         function updateKrMcap(c, p) {
             const m = BASE_KR_MCAP * (c/p);
-            document.getElementById("KR_MCAP").innerText = Math.floor(m).toLocaleString();
-            formatChange(m, BASE_KR_MCAP, "KR_MCAP");
+            const el = document.getElementById("KR_MCAP");
+            if(el) { el.innerText = Math.floor(m).toLocaleString(); formatChange(m, BASE_KR_MCAP, "KR_MCAP"); }
         }
 
         function updateKospiUsd() {
@@ -148,20 +141,20 @@
             if(live.y10 && live.y2) {
                 const s = live.y10-live.y2, sp = live.y10p-live.y2p;
                 const el = document.getElementById("SPREAD");
-                el.innerText = s.toFixed(3) + "%p";
-                formatChange(s, sp, "SPREAD");
-                el.className = "value " + (s<0?"status-danger":"status-safe");
+                if(el) { el.innerText = s.toFixed(3) + "%p"; formatChange(s, sp, "SPREAD"); el.className = "value " + (s<0?"status-danger":"status-safe"); }
             }
         }
 
         async function init() {
+            // 시총 계산을 위해 VTI를 가장 먼저 호출
+            await getYahoo("VTI", "VTI_HIDDEN");
+
             const jobs = [
-                ["VTI","VTI"],["DX-Y.NYB","DXY"],["^GSPC","SP500"],["^IXIC","NASDAQ"],["^DJI","DOW"],
-                ["^KS11","KOSPI"],["^KQ11","KOSDAQ"],["^TYX","US30Y"],["^TNX","US10Y"],["^IRX","US2Y"],
-                ["GC=F","GOLD"],["SI=F","SILVER"],["HG=F","COPPER"],["PL=F","PLATINUM"],["CL=F","WTI"],
-                ["BTC-USD","BTC"],["ETH-USD","ETH"],["XRP-USD","XRP"],["^VIX","VIX"]
+                ["DX-Y.NYB","DXY"], ["^GSPC","SP500"], ["^IXIC","NASDAQ"], ["^DJI","DOW"],
+                ["^KS11","KOSPI"], ["^KQ11","KOSDAQ"], ["^TYX","US30Y"], ["^TNX","US10Y"], ["^IRX","US2Y"],
+                ["GC=F","GOLD"], ["SI=F","SILVER"], ["HG=F","COPPER"], ["PL=F","PLATINUM"], ["CL=F","WTI"],
+                ["BTC-USD","BTC"], ["ETH-USD","ETH"], ["XRP-USD","XRP"], ["^VIX","VIX"]
             ];
-            // 병렬 실행으로 속도 향상
             jobs.forEach(j => getYahoo(j[0], j[1]));
 
             const fx = ["USD/KRW","JPY/KRW","EUR/KRW","CNY/KRW"];
@@ -174,16 +167,15 @@
                         formatChange(c, p, s);
                         if(s==="USD/KRW"){ live.u=c; live.up=p; updateKospiUsd(); }
                     }
-                }).catch(e=>console.log(s+" 로드실패"));
-                await new Promise(r => setTimeout(r, 300)); // API 과부하 방지
+                });
+                await new Promise(r => setTimeout(r, 400));
             }
 
             fetchData("https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d").then(d=>{
                 if(d && d.chart.result) {
                     const v = d.chart.result[0].meta.regularMarketPrice;
                     const el = document.getElementById("SHILLER");
-                    el.innerText = v.toFixed(1);
-                    el.className = "value " + (v>=30?"status-danger":v>=20?"status-warning":"status-safe");
+                    if(el) { el.innerText = v.toFixed(1); el.className = "value " + (v>=30?"status-danger":v>=20?"status-warning":"status-safe"); }
                 }
             });
             setTimeout(()=>{document.getElementById('status-msg').innerText = "최종 업데이트: " + new Date().toLocaleTimeString();}, 3000);
