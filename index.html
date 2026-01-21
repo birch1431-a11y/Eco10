@@ -45,4 +45,105 @@
 
     <div class="category">미국 국채 금리</div><hr class="hr-short">
     <div class="item-row"><span class="label">30Y Yield</span><div class="val-container"><span class="value" id="US30Y">--</span><div class="change" id="US30Y-c">--</div></div></div>
-    <div class="item-row"><span class="label">10Y Yield</span><div class="
+    <div class="item-row"><span class="label">10Y Yield</span><div class="val-container"><span class="value" id="US10Y">--</span><div class="change" id="US10Y-c">--</div></div></div>
+    <div class="item-row"><span class="label">2Y Yield</span><div class="val-container"><span class="value" id="US2Y">--</span><div class="change" id="US2Y-c">--</div></div></div>
+
+    <div class="category">원자재</div><hr class="hr-short">
+    <div class="item-row"><span class="label">GOLD</span><div class="val-container"><span class="value" id="GOLD">--</span><div class="change" id="GOLD-c">--</div></div></div>
+    <div class="item-row"><span class="label">SILVER</span><div class="val-container"><span class="value" id="SILVER">--</span><div class="change" id="SILVER-c">--</div></div></div>
+    <div class="item-row"><span class="label">구리</span><div class="val-container"><span class="value" id="COPPER">--</span><div class="change" id="COPPER-c">--</div></div></div>
+    <div class="item-row"><span class="label">PLATINUM</span><div class="val-container"><span class="value" id="PLATINUM">--</span><div class="change" id="PLATINUM-c">--</div></div></div>
+    <div class="item-row"><span class="label">WTI유</span><div class="val-container"><span class="value" id="WTI">--</span><div class="change" id="WTI-c">--</div></div></div>
+
+    <div class="category">가상자산</div><hr class="hr-short">
+    <div class="item-row"><span class="label">BTC ($)</span><div class="val-container"><span class="value" id="BTC">--</span><div class="change" id="BTC-c">--</div></div></div>
+    <div class="item-row"><span class="label">ETH ($)</span><div class="val-container"><span class="value" id="ETH">--</span><div class="change" id="ETH-c">--</div></div></div>
+    <div class="item-row"><span class="label">XRP ($)</span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
+
+    <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
+    <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">장단기 금리차</span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
+    <div class="item-row"><span class="label">버핏 지수</span><div class="val-container"><span class="value" id="BUFFETT">--</span></div></div>
+    <div class="item-row"><span class="label">쉴러 PER</span><div class="val-container"><span class="value" id="SHILLER">--</span></div></div>
+
+    <div id="status-msg">데이터 연결 중...</div>
+
+    <script>
+        const MY_KEY = "7142915ec1dc45caad56dfc9fcf07341";
+        const BASE_US = 55.2, BASE_KR = 2450;
+        let l_kospi = {c:0, p:0}, l_usd = {c:0, p:0}, l_10y = {c:0, p:0}, l_2y = {c:0, p:0};
+
+        async function pull(url) {
+            const ps = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
+            for (let p of ps) {
+                try {
+                    const r = await fetch(p);
+                    const j = await r.json();
+                    return j.contents ? JSON.parse(j.contents) : j;
+                } catch(e) {}
+            }
+            return null;
+        }
+
+        async function getSmart(type) {
+            const t = new Date(), ym = t.getFullYear() + "-" + (t.getMonth() + 1);
+            let s = JSON.parse(localStorage.getItem('sm_' + type)) || { v: (type === 'GDP' ? 27.94 : 38.1), d: "" };
+            
+            // 데이터가 없거나 달이 바뀌었으면 갱신 시도
+            if (!s.d || s.d !== ym) {
+                const url = type === 'GDP' ? "https://query1.finance.yahoo.com/v8/finance/chart/GDP?interval=1d&range=5y" : "https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d";
+                const d = await pull(url);
+                if (d?.chart?.result) {
+                    let nv = d.chart.result[0].meta.regularMarketPrice;
+                    s.v = type === 'GDP' ? nv / 1000 : nv; s.d = ym;
+                    localStorage.setItem('sm_' + type, JSON.stringify(s));
+                }
+            }
+            return s.v;
+        }
+
+        function setUI(id, c, p) {
+            const el = document.getElementById(id); if (!el) return;
+            el.innerText = c > 1000 ? c.toLocaleString(undefined, {maximumFractionDigits:2}) : c.toFixed(2);
+            if (id.includes("Y")) el.innerText = c.toFixed(3) + "%";
+            
+            if (p !== undefined) {
+                const diff = c - p, pct = (diff/p*100).toFixed(2);
+                const cEl = document.getElementById(id + "-c");
+                if (cEl) cEl.innerHTML = `<span class="${diff>0?'up':'down'}">${diff>0?'▲':'▼'} ${Math.abs(diff).toFixed(2)} (${pct}%)</span>`;
+            }
+        }
+
+        async function loadYahoo(tic, id) {
+            const d = await pull(`https://query1.finance.yahoo.com/v8/finance/chart/${tic}?interval=1m&range=1d`);
+            if (!d?.chart?.result) return;
+            const m = d.chart.result[0].meta, c = m.regularMarketPrice, p = m.previousClose;
+
+            if (id === "VTI_REF") {
+                const curM = BASE_US * (c/p);
+                setUI("US_MCAP", curM, BASE_US);
+                getSmart('GDP').then(g => {
+                    const b = (curM/g*100).toFixed(1); 
+                    const bEl = document.getElementById("BUFFETT");
+                    if(bEl) {
+                        bEl.innerText = b + "%"; 
+                        bEl.className = "value " + (b>=150?"status-danger":b>=120?"status-warning":"status-safe");
+                    }
+                });
+            } else { setUI(id, c, p); }
+
+            if (id === "KOSPI") { l_kospi.c=c; l_kospi.p=p; updateKUsd(); setUI("KR_MCAP", BASE_KR*(c/p), BASE_KR); }
+            if (id === "US10Y") { l_10y.c=c; l_10y.p=p; updateSpread(); }
+            if (id === "US2Y") { l_2y.c=c; l_2y.p=p; updateSpread(); }
+            if (id === "VIX") document.getElementById(id).className = "value " + (c>=30?"status-danger":c>=20?"status-warning":"status-safe");
+        }
+
+        function updateKUsd() { if(l_kospi.c && l_usd.c) setUI("KOSPI_USD", l_kospi.c/l_usd.c, l_kospi.p/l_usd.p); }
+        function updateSpread() { 
+            if(l_10y.c && l_2y.c) {
+                const s = l_10y.c - l_2y.c, ps = l_10y.p - l_2y.p;
+                const el = document.getElementById("SPREAD"); 
+                if(el) {
+                    el.innerText = s.toFixed(3) + "%p";
+                    el.className = "value " + (s<0?"status-danger":"status-safe"); 
+                    setUI("SPREAD", s, ps);
