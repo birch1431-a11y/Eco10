@@ -44,15 +44,7 @@
     <div class="item-row"><span class="label">DOW</span><div class="val-container"><span class="value" id="DOW">--</span><div class="change" id="DOW-c">--</div></div></div>
     <div class="item-row"><span class="label">한 증시 시총<span class="unit-text">(조₩)</span></span><div class="val-container"><span class="value" id="KR_MCAP">--</span><div class="change" id="KR_MCAP-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSPI</span><div class="val-container"><span class="value" id="KOSPI">--</span><div class="change" id="KOSPI-c">--</div></div></div>
-    
-    <div class="item-row">
-        <span class="label">달러환산 KOSPI (KOSPI/환율)</span>
-        <div class="val-container">
-            <span class="value" id="KOSPI_USD">--</span>
-            <div class="change" id="KOSPI_USD-c">--</div>
-        </div>
-    </div>
-    
+    <div class="item-row"><span class="label">달러환산 KOSPI</span><div class="val-container"><span class="value" id="KOSPI_USD">--</span><div class="change" id="KOSPI_USD-c">--</div></div></div>
     <div class="item-row"><span class="label">KOSDAQ</span><div class="val-container"><span class="value" id="KOSDAQ">--</span><div class="change" id="KOSDAQ-c">--</div></div></div>
 
     <div class="category">미국 국채 금리</div><hr class="hr-short">
@@ -73,13 +65,62 @@
     <div class="item-row"><span class="label">XRP<span class="unit-text">($)</span></span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
-    <div class="item-row"><span class="label">VIX 지수<span class="unit-text">(공포지수)</span></span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
-    <div class="item-row"><span class="label">장단기 금리차<span class="unit-text">(10Y-2Y)</span></span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
-    <div class="item-row"><span class="label">버핏 지수<span class="unit-text">(실시간 연동)</span></span><span class="value" id="BUFFETT">--</span></div>
-    <div class="item-row"><span class="label">쉴러 PER<span class="unit-text">(CAPE)</span></span><span class="value" id="SHILLER">--</span></div>
+    <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">장단기 금리차</span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
+    <div class="item-row"><span class="label">버핏 지수</span><span class="value" id="BUFFETT">--</span></div>
+    <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
 
-    <div class="footer-copy">
-        2026 Developed by <span style="color: #777; font-weight: 500; font-size: 0.9rem;">S.K. Chun</span>
-    </div>
+    <div class="footer-copy">2026 Developed by <span style="color: #777;">S.K. Chun</span></div>
+    <div id="status-msg" style="text-align:center; font-size:0.7rem; color:#555; margin-bottom:30px;">로딩 중...</div>
 
-    <div id="status-msg" style="
+    <script>
+        const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
+        const BASE_US_MCAP = 55.2; 
+        const BASE_KR_MCAP = 2450; 
+
+        let liveKospi = { cur: null, prev: null }, liveUsdKrw = { cur: null, prev: null };
+        let globalRates = { "10Y": null, "2Y": null, "10Y_prev": null, "2Y_prev": null };
+
+        async function fetchData(url) {
+            const proxies = [`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, `https://corsproxy.io/?${encodeURIComponent(url)}` ];
+            for (let proxy of proxies) {
+                try {
+                    const res = await fetch(proxy);
+                    const json = await res.json();
+                    return json.contents ? JSON.parse(json.contents) : json;
+                } catch (e) { continue; }
+            }
+            return null;
+        }
+
+        async function getSmartData(type) {
+            const today = new Date();
+            const yearMonth = today.getFullYear() + "-" + (today.getMonth() + 1);
+            let saved = JSON.parse(localStorage.getItem('smart_' + type)) || { val: (type === 'GDP' ? 27.94 : 38.1), lastChecked: "" };
+            let needCheck = (type === 'GDP' && [1, 4, 7, 10].includes(today.getMonth()+1) && today.getDate() >= 30) || (type === 'SHILLER' && today.getDate() >= 7);
+            
+            if (needCheck && saved.lastChecked !== yearMonth) {
+                const url = type === 'GDP' ? "https://query1.finance.yahoo.com/v8/finance/chart/GDP?interval=1d&range=5y" : "https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d";
+                const data = await fetchData(url);
+                if (data?.chart?.result) {
+                    let newVal = data.chart.result[0].meta.regularMarketPrice;
+                    saved.val = type === 'GDP' ? newVal / 1000 : newVal;
+                    saved.lastChecked = yearMonth;
+                    localStorage.setItem('smart_' + type, JSON.stringify(saved));
+                }
+            }
+            return saved.val;
+        }
+
+        function formatChange(current, prev, id) {
+            if (!prev || !current) return;
+            const diff = current - prev, percent = (diff / prev * 100).toFixed(2);
+            const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
+            const el = document.getElementById(id + "-c");
+            if (el) el.innerHTML = `<span class="${cls}">${diff > 0 ? "▲" : "▼"} ${Math.abs(diff).toFixed(2)} (${percent}%)</span>`;
+        }
+
+        async function getYahoo(ticker, id) {
+            const data = await fetchData(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`);
+            if (!data?.chart?.result) return;
+            const meta = data.chart.result[0].meta;
