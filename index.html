@@ -73,12 +73,17 @@
         const BASE_KR_MCAP = 4660; 
         let live = { k:0, kp:0, u:0, up:0, y10:0, y10p:0, y2:0, y2p:0 };
 
- async function fetchData(url) {
-    const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+async function fetchData(url) {
+    // 또 다른 프록시 서비스: 에러 발생 시 우회 시도
+    const proxy = `https://thingproxy.freeboard.io/fetch/${url}`;
     try {
         const res = await fetch(proxy);
+        if (!res.ok) throw new Error('Network res was not ok');
         return await res.json();
-    } catch (e) { return null; }
+    } catch (e) { 
+        console.error("데이터 로드 실패:", e);
+        return null; 
+    }
 }
 
         function formatChange(c, p, id) {
