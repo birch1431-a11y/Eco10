@@ -102,21 +102,11 @@
 
                     if (el) {
                         let displayVal = "";
-                        if (id === "SILVER") {
-                            displayVal = cur.toFixed(3);
-                        } else if (id === "US30Y" || id === "US10Y" || id === "US2Y") {
-                            displayVal = cur.toFixed(2) + "%";
-                        } else {
-                            displayVal = cur.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-                        }
+                        if (id === "SILVER") { displayVal = cur.toFixed(3); } 
+                        else if (id === "US30Y" || id === "US10Y" || id === "US2Y") { displayVal = cur.toFixed(2) + "%"; } 
+                        else { displayVal = cur.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
                         el.innerText = displayVal;
                         formatChange(cur, prev, id);
-
-                        if (id === "VIX") {
-                            if (cur >= 30) el.className = "value status-danger";
-                            else if (cur >= 20) el.className = "value status-warning";
-                            else el.className = "value status-safe";
-                        }
                     }
 
                     if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
@@ -175,7 +165,6 @@
                 ["DX-Y.NYB","DXY"], ["^GSPC","SP500"], ["^IXIC","NASDAQ"], ["^DJI","DOW"],
                 ["^KS11","KOSPI"], ["^KQ11","KOSDAQ"], ["^TYX","US30Y"], ["^TNX","US10Y"], ["^IRX","US2Y"],
                 ["GC=F","GOLD"], ["SI=F","SILVER"], ["HG=F","COPPER"], ["PL=F","PLATINUM"], ["CL=F","WTI"]
-                // 가상자산은 아래 Twelve Data 루프로 이동됨
             ];
             
             for (const j of jobs) {
@@ -183,11 +172,12 @@
                 await new Promise(r => setTimeout(r, 200));
             }
 
-            // Twelve Data 통합 루프 (환율 + 가상자산)
+            // Twelve Data 통합 루프 (환율 + 가상자산 + VIX)
             const tdata_items = [
                 {s:"USD/KRW", id:"USD/KRW"}, {s:"JPY/KRW", id:"JPY/KRW"}, 
                 {s:"EUR/KRW", id:"EUR/KRW"}, {s:"CNY/KRW", id:"CNY/KRW"},
-                {s:"BTC/USD", id:"BTC"}, {s:"ETH/USD", id:"ETH"}, {s:"XRP/USD", id:"XRP"}
+                {s:"BTC/USD", id:"BTC"}, {s:"ETH/USD", id:"ETH"}, {s:"XRP/USD", id:"XRP"},
+                {s:"VIX", id:"VIX"} // VIX 추가
             ];
 
             for (const item of tdata_items) {
@@ -197,17 +187,22 @@
                         const c=parseFloat(d.close), p=parseFloat(d.previous_close);
                         const el = document.getElementById(item.id);
                         if(el) {
-                            if(item.id === "XRP") {
-                                el.innerText = c.toFixed(4);
-                            } else {
-                                el.innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-                            }
+                            if(item.id === "XRP") el.innerText = c.toFixed(4);
+                            else el.innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+                            
                             formatChange(c, p, item.id);
                             if(item.id === "USD/KRW"){ live.u=c; live.up=p; updateKospiUsd(); }
+                            
+                            // VIX 전용 색상 로직
+                            if (item.id === "VIX") {
+                                if (c >= 30) el.className = "value status-danger";
+                                else if (c >= 20) el.className = "value status-warning";
+                                else el.className = "value status-safe";
+                            }
                         }
                     }
                 }).catch(e => console.error(item.id + " 로드 실패"));
-                await new Promise(r => setTimeout(r, 800)); // 호출 제한을 고려해 간격 약간 증가
+                await new Promise(r => setTimeout(r, 800));
             }
 
             fetchData("https://query1.finance.yahoo.com/v8/finance/chart/CAPE?interval=1d&range=1d").then(d=>{
