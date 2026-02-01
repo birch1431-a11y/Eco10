@@ -59,7 +59,7 @@
     <div class="item-row"><span class="label">XRP($)</span><div class="val-container"><span class="value" id="XRP">--</span><div class="change" id="XRP-c">--</div></div></div>
 
     <div class="category">시장 심리 및 밸류에이션</div><hr class="hr-short">
-    <div class="item-row"><span class="label">VIX 지수</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
+    <div class="item-row"><span class="label">VIXY (변동성)</span><div class="val-container"><span class="value" id="VIX">--</span><div class="change" id="VIX-c">--</div></div></div>
     <div class="item-row"><span class="label">장단기 금리차</span><div class="val-container"><span class="value" id="SPREAD">--</span><div class="change" id="SPREAD-c">--</div></div></div>
     <div class="item-row"><span class="label">버핏 지수</span><span class="value" id="BUFFETT">--</span></div>
     <div class="item-row"><span class="label">쉴러 PER</span><span class="value" id="SHILLER">--</span></div>
@@ -107,6 +107,14 @@
                         else { displayVal = cur.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
                         el.innerText = displayVal;
                         formatChange(cur, prev, id);
+
+                        // VIXY 전용 색상 로직 (VIX 지수 대용이므로 퍼센트 변화로 판단하는 것이 안정적)
+                        if (id === "VIX") {
+                            const pct = ((cur - prev) / prev * 100);
+                            if (pct >= 5) el.className = "value status-danger";
+                            else if (pct >= 2) el.className = "value status-warning";
+                            else el.className = "value status-safe";
+                        }
                     }
 
                     if(id === "KOSPI") { live.k=cur; live.kp=prev; updateKrMcap(cur, prev); }
@@ -164,7 +172,8 @@
             const jobs = [
                 ["DX-Y.NYB","DXY"], ["^GSPC","SP500"], ["^IXIC","NASDAQ"], ["^DJI","DOW"],
                 ["^KS11","KOSPI"], ["^KQ11","KOSDAQ"], ["^TYX","US30Y"], ["^TNX","US10Y"], ["^IRX","US2Y"],
-                ["GC=F","GOLD"], ["SI=F","SILVER"], ["HG=F","COPPER"], ["PL=F","PLATINUM"], ["CL=F","WTI"]
+                ["GC=F","GOLD"], ["SI=F","SILVER"], ["HG=F","COPPER"], ["PL=F","PLATINUM"], ["CL=F","WTI"],
+                ["VIXY", "VIX"] // VIXY로 야후 리스트에 추가
             ];
             
             for (const j of jobs) {
@@ -172,12 +181,10 @@
                 await new Promise(r => setTimeout(r, 200));
             }
 
-            // Twelve Data 통합 루프 (환율 + 가상자산 + VIX)
             const tdata_items = [
                 {s:"USD/KRW", id:"USD/KRW"}, {s:"JPY/KRW", id:"JPY/KRW"}, 
                 {s:"EUR/KRW", id:"EUR/KRW"}, {s:"CNY/KRW", id:"CNY/KRW"},
-                {s:"BTC/USD", id:"BTC"}, {s:"ETH/USD", id:"ETH"}, {s:"XRP/USD", id:"XRP"},
-                {s:"VIX", id:"VIX"} // VIX 추가
+                {s:"BTC/USD", id:"BTC"}, {s:"ETH/USD", id:"ETH"}, {s:"XRP/USD", id:"XRP"}
             ];
 
             for (const item of tdata_items) {
@@ -189,16 +196,8 @@
                         if(el) {
                             if(item.id === "XRP") el.innerText = c.toFixed(4);
                             else el.innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-                            
                             formatChange(c, p, item.id);
                             if(item.id === "USD/KRW"){ live.u=c; live.up=p; updateKospiUsd(); }
-                            
-                            // VIX 전용 색상 로직
-                            if (item.id === "VIX") {
-                                if (c >= 30) el.className = "value status-danger";
-                                else if (c >= 20) el.className = "value status-warning";
-                                else el.className = "value status-safe";
-                            }
                         }
                     }
                 }).catch(e => console.error(item.id + " 로드 실패"));
