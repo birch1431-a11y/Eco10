@@ -76,10 +76,8 @@
         const MY_API_KEY = "7142915ec1dc45caad56dfc9fcf07341";
         const FRED_API_KEY = "cbc0c68b6d198568f349a58e0e2f25b9";
 
-        // 안내 문구 설정
         const noticeText = `경제지표들을 가능한 많이 담고 싶었으나 무료 입수에 근본적인 한계가 있습니다.\n\n우선 데이터 제공 사이트에서는 원 데이터 제공자와의 계약관계상 제약이 있고, 기계적 방식으로 접속하는 경우 외부 공격으로 판단하여 해당 접근 경로를 차단하기도 합니다.\n(단시간내 반복적 새로고침이 문제를 악화시키므로 상황판 상단의 새로고침 기능은 삭제함)\n\n이로 인해 제공되던 데이터들이 막히는 일이 반복되고 있습니다. 따라서 부득이 제공 사이트들을 교체하고 문제가 없는 수준에서 데이터를 가져오도록 수정했습니다.\n\n또한 경제지표 중 S&P500, 코스피, VIX는 원계약자에 묶인 경우가 많아서 이에 대해서는 지수추종 ETF로 교체했습니다. 지수와 ETF는 쌍둥이처럼 움직입니다. 100만 원 움직일 때 몇백 원 정도의 미세한 오차는 있을 수 있지만, 시장이 어떤 상황인지 방향을 확인하는 데는 지장이 없습니다.`;
 
-        // 팝업 로직
         function handleNotice() {
             const hasSeenNotice = localStorage.getItem('notice_closed_2026');
             if (!hasSeenNotice) {
@@ -95,10 +93,19 @@
 
         async function fetchFredDirect(url) {
             try {
-                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-                if (res.ok) return await res.json();
+                // 더 강력한 프록시 주소로 변경
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    const json = await res.json();
+                    // allorigins 특유의 감싸진 데이터를 문자열에서 객체로 변환
+                    return typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
+                }
                 return null;
-            } catch (e) { return null; }
+            } catch (e) { 
+                console.error("FRED Fetch Error:", e);
+                return null; 
+            }
         }
 
         function formatChange(c, p, id) {
@@ -119,7 +126,7 @@
                     const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${item.s}&api_key=${FRED_API_KEY}&file_type=json&sort_order=desc&limit=5`;
                     const data = await fetchFredDirect(url);
                     if (data && data.observations) {
-                        const obs = data.observations.filter(o => !isNaN(parseFloat(o.value)));
+                        const obs = data.observations.filter(o => o.value !== "." && !isNaN(parseFloat(o.value)));
                         if(obs.length >= 2) {
                             const c = parseFloat(obs[0].value);
                             const p = parseFloat(obs[1].value);
@@ -135,7 +142,7 @@
         }
 
         async function init() {
-            handleNotice(); // 첫 접속 안내 팝업 실행
+            handleNotice();
 
             const tdata_items = [
                 {s:"USD/KRW", id:"USD/KRW"}, {s:"JPY/KRW", id:"JPY/KRW"}, 
@@ -159,6 +166,7 @@
                 } catch(e){}
             }
 
+            // 트웰브데이터 로딩 후 국채 금리 실행
             fetchFredData();
 
             setTimeout(()=>{ document.getElementById('status-msg').innerText = "최종 업데이트: " + new Date().toLocaleTimeString(); }, 1000);
