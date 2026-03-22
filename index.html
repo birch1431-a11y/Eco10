@@ -52,7 +52,6 @@
 
         function formatChange(curr, prev, id) {
             if(!curr || isNaN(curr)) return;
-            // 전일 종가가 없으면 0.1% 정도의 임의 변동을 가정해 화살표를 강제로 생성 (임시 방편)
             let p = (prev && !isNaN(prev)) ? prev : curr * 0.999; 
             const diff = curr - p;
             const pct = (diff / p * 100).toFixed(2);
@@ -64,66 +63,73 @@
             }
         }
 
+        async function fetchTwelveData(item) {
+            try {
+                const r = await fetch(`https://api.twelvedata.com/quote?symbol=${item.s}&apikey=${MY_API_KEY}`);
+                const d = await r.json();
+                if(d && d.close){
+                    const c=parseFloat(d.close), p=parseFloat(d.previous_close);
+                    document.getElementById(item.id).innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+                    formatChange(c, p, item.id);
+                }
+            } catch(e){}
+        }
+
+        async function fetchYieldData(item) {
+            const cacheKey = `yield_vFinal_${item.id}`;
+            const cached = JSON.parse(localStorage.getItem(cacheKey));
+            const now = Date.now();
+            const CACHE_TIME = 3 * 60 * 60 * 1000;
+
+            if (cached && (now - cached.timestamp < CACHE_TIME)) {
+                document.getElementById(item.id).innerText = cached.close.toFixed(2);
+                formatChange(cached.close, cached.prev, item.id);
+                return;
+            }
+
+            try {
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+item.s+'?interval=1d&range=1d')}`);
+                const d = await r.json();
+                const meta = JSON.parse(d.contents).chart.result[0].meta;
+                
+                let c = meta.regularMarketPrice;
+                let p = meta.previousClose;
+
+                if (c) {
+                    localStorage.setItem(cacheKey, JSON.stringify({ close: c, prev: p, timestamp: now }));
+                    document.getElementById(item.id).innerText = c.toFixed(2);
+                    formatChange(c, p, item.id);
+                }
+            } catch (e) {
+                if (cached) {
+                    document.getElementById(item.id).innerText = cached.close.toFixed(2);
+                    formatChange(cached.close, cached.prev, item.id);
+                }
+            }
+        }
+
         async function init() {
-            // 1. 일반 지표 (Twelve Data)
             const realTimeItems = [
                 {s:"USD/KRW", id:"USD/KRW"}, {s:"JPY/KRW", id:"JPY/KRW"}, 
                 {s:"SPY", id:"SP500"}, {s:"EWY", id:"KOSPI"}, {s:"VXX", id:"VIX"},
                 {s:"BTC/USD", id:"BTC"}, {s:"ETH/USD", id:"ETH"},
                 {s:"XAU/USD", id:"GOLD"}
             ];
+            const yieldItems = [{s:"^TNX", id:"US10Y"}, {s:"^2Y", id:"US2Y"}];
 
-            for (const item of realTimeItems) {
-                try {
-                    const r = await fetch(`https://api.twelvedata.com/quote?symbol=${item.s}&apikey=${MY_API_KEY}`);
-                    const d = await r.json();
-                    if(d && d.close){
-                        const c=parseFloat(d.close), p=parseFloat(d.previous_close);
-                        document.getElementById(item.id).innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-                        formatChange(c, p, item.id);
-                    }
-                } catch(e){}
-            }
+            // 모든 요청을 병렬(동시)로 실행
+            const tasks = [
+                ...realTimeItems.map(item => fetchTwelveData(item)),
+                ...yieldItems.map(item => fetchYieldData(item))
+            ];
 
-            // 2. 국채 금리 (화살표 강제 생성 로직 적용)
-            const yieldItems = [{s:"^TNX", id:"US10Y"}, {s:"^IRX", id:"US2Y"}];
-            const CACHE_TIME = 3 * 60 * 60 * 1000;
+            await Promise.allSettled(tasks);
 
-            for (const item of yieldItems) {
-                const cacheKey = `yield_vFinal_${item.id}`;
-                const cached = JSON.parse(localStorage.getItem(cacheKey));
-                const now = Date.now();
-
-                if (cached && (now - cached.timestamp < CACHE_TIME)) {
-                    document.getElementById(item.id).innerText = cached.close.toFixed(2);
-                    formatChange(cached.close, cached.prev, item.id);
-                } else {
-                    try {
-                        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+item.s+'?interval=1d&range=1d')}`);
-                        const d = await r.json();
-                        const meta = JSON.parse(d.contents).chart.result[0].meta;
-                        
-                        let c = meta.regularMarketPrice;
-                        let p = meta.previousClose;
-
-                        if(item.id === "US2Y" && c > 10) c /= 10;
-                        if(item.id === "US2Y" && p > 10) p /= 10;
-
-                        if (c) {
-                            localStorage.setItem(cacheKey, JSON.stringify({ close: c, prev: p, timestamp: now }));
-                            document.getElementById(item.id).innerText = c.toFixed(2);
-                            formatChange(c, p, item.id);
-                        }
-                    } catch (e) {
-                        if (cached) {
-                            document.getElementById(item.id).innerText = cached.close.toFixed(2);
-                            formatChange(cached.close, cached.prev, item.id);
-                        }
-                    }
-                }
-            }
-            setTimeout(()=>{ document.getElementById('status-msg').innerText = "업데이트 완료: " + new Date().toLocaleTimeString(); }, 500);
+            setTimeout(()=>{ 
+                document.getElementById('status-msg').innerText = "업데이트 완료: " + new Date().toLocaleTimeString(); 
+            }, 500);
         }
+
         window.onload = init;
     </script>
 </body>
