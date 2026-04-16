@@ -67,10 +67,11 @@
 
         async function fetchTwelveData(item, index) {
             try {
+                // 인덱스별 지연을 주되, 데이터를 받는 즉시 화면 갱신
                 await sleep(index * 150);
-                const r = await fetch(`https://api.twelvedata.com/quote?symbol=${item.s}&apikey=${MY_API_KEY}`);
+                const r = await fetch(`https://api.twelvedata.com/quote?symbol=${item.s}&apikey=${MY_API_KEY}&_=${Date.now()}`);
                 const d = await r.json();
-                if(d && d.close){
+                if(d && d.close && d.previous_close){
                     const c=parseFloat(d.close), p=parseFloat(d.previous_close);
                     document.getElementById(item.id).innerText = c.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
                     formatChange(c, p, item.id);
@@ -80,48 +81,44 @@
 
         async function fetchExternalData(item) {
             const cacheKey = `global_macro_v2026_${item.id}`;
+            const cached = JSON.parse(localStorage.getItem(cacheKey));
             const now = Date.now();
+            const CACHE_TIME = 60 * 60 * 1000;
+
+            if (cached) {
+                document.getElementById(item.id).innerText = cached.close.toFixed(2);
+                formatChange(cached.close, cached.prev, item.id);
+                if (now - cached.timestamp < CACHE_TIME) return;
+            }
 
             try {
-                // 야후에서 데이터 갱신 누락 시 차트 데이터(range=5d)에서 직전 종가를 찾아내는 로직 추가
                 const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${item.s}?interval=1d&range=5d&_=${now}`;
                 const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
                 const d = await r.json();
-                const result = JSON.parse(d.contents).chart.result[0];
+                const resObj = JSON.parse(d.contents).chart.result[0];
                 
-                let c = result.meta.regularMarketPrice;
-                let p = result.meta.previousClose;
+                let c = resObj.meta.regularMarketPrice;
+                let p = resObj.meta.previousClose;
 
-                // 금리 수치 보정 (기존 로직 유지)
+                if(!p && resObj.indicators.quote[0].close) {
+                    const validCloses = resObj.indicators.quote[0].close.filter(v => v !== null);
+                    if(validCloses.length >= 2) p = validCloses[validCloses.length - 2];
+                }
+
                 if(item.id === "US2Y" && c > 10) c /= 10;
                 if(item.id === "US2Y" && p > 10) p /= 10;
 
-                // 종가(p)가 없을 경우 차트 배열에서 추출 (안전장치)
-                if(!p && result.indicators.quote[0].close) {
-                    const closeArr = result.indicators.quote[0].close.filter(v => v !== null);
-                    if(closeArr.length >= 2) p = closeArr[closeArr.length - 2];
-                }
-
-                if (c) {
+                if (c && p && !isNaN(c) && !isNaN(p)) {
                     localStorage.setItem(cacheKey, JSON.stringify({ close: c, prev: p, timestamp: now }));
-                    // 은(SILVER)을 포함하여 모든 수치를 기존처럼 소수점 2자리로 표시
                     document.getElementById(item.id).innerText = c.toFixed(2);
                     formatChange(c, p, item.id);
                 }
-            } catch (e) {
-                const cached = JSON.parse(localStorage.getItem(cacheKey));
-                if (cached) {
-                    document.getElementById(item.id).innerText = cached.close.toFixed(2);
-                    formatChange(cached.close, cached.prev, item.id);
-                }
-            }
+            } catch (e) {}
         }
 
         async function init() {
             const externalItems = [
-                {s:"^IRX", id:"US2Y"},
-                {s:"^TNX", id:"US10Y"}, 
-                {s:"SI=F", id:"SILVER"}
+                {s:"^IRX", id:"US2Y"}, {s:"^TNX", id:"US10Y"}, {s:"SI=F", id:"SILVER"}
             ];
 
             const realTimeItems = [
@@ -131,14 +128,16 @@
                 {s:"XAU/USD", id:"GOLD"}
             ];
 
-            const extTasks = externalItems.map(item => fetchExternalData(item));
-            const rtTasks = realTimeItems.map((item, index) => fetchTwelveData(item, index));
+            // 야후 데이터 즉시 실행
+            externalItems.forEach(item => fetchExternalData(item));
+            
+            // 트웰브데이터도 await 없이 병렬로 즉시 실행하여 하나씩 뜨게 함
+            realTimeItems.forEach((item, index) => fetchTwelveData(item, index));
 
-            await Promise.allSettled([...extTasks, ...rtTasks]);
-
-            setTimeout(()=>{ 
-                document.getElementById('status-msg').innerText = "최종 업데이트: " + new Date().toLocaleTimeString(); 
-            }, 500);
+            // 상태 메시지는 별도로 업데이트
+            setTimeout(() => {
+                document.getElementById('status-msg').innerText = "데이터 업데이트 중...";
+            }, 100);
         }
 
         window.onload = init;
